@@ -2513,16 +2513,18 @@ class TelegramBot extends EventEmitter {
    *
    * @param  {Object} media  A JSON-serialized object for a new media content of the message
    * @param  {Object} [options] Additional Telegram query options (provide either one of chat_id, message_id, or inline_message_id here)
+   * @param  {Object} [fileOptions] Optional file related meta-data
    * @return {Promise} On success, if the edited message is not an inline message, the edited [Message](https://core.telegram.org/bots/api#message) is returned, otherwise True is returned
    * @see https://core.telegram.org/bots/api#editmessagemedia
    */
-  editMessageMedia(media, form = {}) {
-    const regexAttach = /attach:\/\/.+/;
-
+  editMessageMedia(media, form = {}, fileOptions = {}) {
+    const opts = {
+      qs: form,
+    };
+    
+    // This is to keep a backward compatibility, that was undocumented so no-one may be acutally using it
     if (typeof media.media === 'string' && regexAttach.test(media.media)) {
-      const opts = {
-        qs: form,
-      };
+      const regexAttach = /attach:\/\/.+/;
 
       opts.formData = {};
 
@@ -2552,9 +2554,15 @@ class TelegramBot extends EventEmitter {
       return this._request('editMessageMedia', opts);
     }
 
-    form.media = stringify(media);
-
-    return this._request('editMessageMedia', { form });
+    try {
+      const sendData = this._formatSendData(media.type, media.media, fileOptions);
+      opts.formData = sendData[0];
+      media.media = sendData[1] || "attach://"+media.type;
+      opts.qs.media = stringify(media);
+    } catch (ex) {
+      return Promise.reject(ex);
+    }
+    return this._request('editMessageMedia', opts);
   }
 
   /**

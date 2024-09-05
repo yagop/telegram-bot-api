@@ -121,7 +121,7 @@ TelegramBot
         * [.getMyDefaultAdministratorRights([options])](#TelegramBot+getMyDefaultAdministratorRights) ⇒ <code>Promise</code>
         * [.editMessageText(text, [options])](#TelegramBot+editMessageText) ⇒ <code>Promise</code>
         * [.editMessageCaption(caption, [options])](#TelegramBot+editMessageCaption) ⇒ <code>Promise</code>
-        * [.editMessageMedia(media, [options])](#TelegramBot+editMessageMedia) ⇒ <code>Promise</code>
+        * [.editMessageMedia(media, [options], [fileOptions])](#TelegramBot+editMessageMedia) ⇒ <code>Promise</code>
         * [.editMessageReplyMarkup(replyMarkup, [options])](#TelegramBot+editMessageReplyMarkup) ⇒ <code>Promise</code>
         * [.stopPoll(chatId, pollId, [options])](#TelegramBot+stopPoll) ⇒ <code>Promise</code>
         * [.sendSticker(chatId, sticker, [options], [fileOptions])](#TelegramBot+sendSticker) ⇒ <code>Promise</code>
@@ -1922,7 +1922,7 @@ Note: You **must provide one of chat_id, message_id, or inline_message_id** in y
 
 <a name="TelegramBot+editMessageMedia"></a>
 
-### telegramBot.editMessageMedia(media, [options]) ⇒ <code>Promise</code>
+### telegramBot.editMessageMedia(media, [options], [fileOptions]) ⇒ <code>Promise</code>
 Use this method to edit animation, audio, document, photo, or video messages.
 
 If a message is a part of a message album, then it can be edited only to a photo or a video.
@@ -1940,6 +1940,7 @@ Note: You **must provide one of chat_id, message_id, or inline_message_id** in y
 | --- | --- | --- |
 | media | <code>Object</code> | A JSON-serialized object for a new media content of the message |
 | [options] | <code>Object</code> | Additional Telegram query options (provide either one of chat_id, message_id, or inline_message_id here) |
+| [fileOptions] | <code>Object</code> | Optional file related meta-data |
 
 <a name="TelegramBot+editMessageReplyMarkup"></a>
 

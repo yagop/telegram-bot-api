@@ -19,7 +19,7 @@ Node.js module to interact with the official [Telegram Bot API](https://core.tel
 ## 📦 Install
 
 ```sh
-npm i node-telegram-bot-api
+npm i yagop/node-telegram-bot-api
 ```
 
 <br/>
@@ -100,6 +100,7 @@ Some things built using this library that might interest you:
 * [beetube-bot](https://github.com/kodjunkie/beetube-bot): A telegram bot for music, videos, movies, EDM tracks, torrent downloads, files and more.
 * [telegram-inline-calendar](https://github.com/VDS13/telegram-inline-calendar): Date and time picker and inline calendar for Node.js telegram bots.
 * [telegram-captcha](https://github.com/VDS13/telegram-captcha): Telegram bot to protect Telegram groups from automatic bots.
+* [LibreGroupHelp](https://github.com/Sp3rick/GroupHelp): A privacy oriented Telegram bot to protect and better manage your groups.
 
 
 ## 👥 Contributors
