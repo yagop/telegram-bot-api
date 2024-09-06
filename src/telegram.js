@@ -17,6 +17,7 @@ const URL = require('url');
 const fs = require('fs');
 const pump = require('pump');
 const deprecate = require('./utils').deprecate;
+const MAX_MESSAGE_SIZE = 4096;
 
 const _messageTypes = [
   'text',
@@ -76,6 +77,21 @@ function stringify(data) {
   return JSON.stringify(data);
 }
 
+/**
+ *  Slice an array in sub-array of the same size
+ * @private
+ * @param arr array
+ * @param chunkSize number
+ * @return Array[]
+ */
+function sliceIntoChunks(arr, chunkSize) {
+  const res = [];
+  for (let i = 0; i < arr.length; i += chunkSize) {
+    const chunk = arr.slice(i, i + chunkSize);
+    res.push(chunk);
+  }
+  return res;
+}
 
 class TelegramBot extends EventEmitter {
   /**
@@ -968,6 +984,28 @@ class TelegramBot extends EventEmitter {
     form.chat_id = chatId;
     form.text = text;
     return this._request('sendMessage', { form });
+  }
+
+  /**
+   * Send text message larger than 4096 characters.
+   * @param  {Number|String} chatId Unique identifier for the target chat or username of the target channel (in the format `@channelusername`)
+   * @param  {String} text Text of the message to be sent
+   * @param  {Object} form Additional Telegram query options
+   * @return {Promise} On success all the sent messages are returned as an array
+   */
+  sendLargeMessage(chatId, text, form = {}) {
+    form.chat_id = chatId;
+
+    const subMessages = sliceIntoChunks(text, MAX_MESSAGE_SIZE);
+    const responses = [];
+
+    for (const message of subMessages) {
+      form.text = message;
+      const resPromise = this._request('sendMessage', { form });
+      responses.push(resPromise);
+    }
+
+    return Promise.all(responses);
   }
 
   /**
