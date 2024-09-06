@@ -255,6 +255,13 @@ class TelegramBot extends EventEmitter {
     }
   }
 
+  _fixMessageIds(obj) {
+    const messageIds = obj.message_ids;
+    if (messageIds && typeof messageIds !== 'string') {
+      obj.message_ids = stringify(messageIds);
+    }
+  }
+
   /**
    * Fix 'reply_parameters' parameter by making it JSON-serialized, as
    * required by the Telegram Bot API
@@ -288,6 +295,7 @@ class TelegramBot extends EventEmitter {
       this._fixReplyMarkup(options.form);
       this._fixEntitiesField(options.form);
       this._fixReplyParameters(options.form);
+      this._fixMessageIds(options.form);
     }
     if (options.qs) {
       this._fixReplyMarkup(options.qs);
