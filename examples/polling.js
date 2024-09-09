@@ -14,7 +14,7 @@ const bot = new TelegramBot(TOKEN, options);
 
 
 // Matches /photo
-bot.onText(/\/photo/, function onPhotoText(msg) {
+bot.onText(/^\/photo(@.*|$)/, function onPhotoText(msg) {
   // From file path
   const photo = `${__dirname}/../test/data/photo.gif`;
   bot.sendPhoto(msg.chat.id, photo, {
@@ -24,7 +24,7 @@ bot.onText(/\/photo/, function onPhotoText(msg) {
 
 
 // Matches /audio
-bot.onText(/\/audio/, function onAudioText(msg) {
+bot.onText(/^\/audio(@.*|$)/, function onAudioText(msg) {
   // From HTTP request
   const url = 'https://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg';
   const audio = request(url);
@@ -33,7 +33,7 @@ bot.onText(/\/audio/, function onAudioText(msg) {
 
 
 // Matches /love
-bot.onText(/\/love/, function onLoveText(msg) {
+bot.onText(/^\/love(@.*|$)/, function onLoveText(msg) {
   const opts = {
     reply_to_message_id: msg.message_id,
     reply_markup: JSON.stringify({
@@ -48,14 +48,14 @@ bot.onText(/\/love/, function onLoveText(msg) {
 
 
 // Matches /echo [whatever]
-bot.onText(/\/echo (.+)/, function onEchoText(msg, match) {
+bot.onText(/^\/echo(?:@.*?)? (.+)/, function onEchoText(msg, match) {
   const resp = match[1];
   bot.sendMessage(msg.chat.id, resp);
 });
 
 
 // Matches /editable
-bot.onText(/\/editable/, function onEditableText(msg) {
+bot.onText(/^\/editable(@.*|$)/, function onEditableText(msg) {
   const opts = {
     reply_markup: {
       inline_keyboard: [

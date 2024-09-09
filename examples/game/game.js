@@ -33,7 +33,7 @@ if (url === '0') {
 }
 
 // Matches /start
-bot.onText(/\/start/, function onPhotoText(msg) {
+bot.onText(/^\/start(@.*|$)/, function onPhotoText(msg) {
   bot.sendGame(msg.chat.id, gameName);
 });
 

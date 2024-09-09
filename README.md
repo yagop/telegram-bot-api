@@ -41,7 +41,7 @@ const token = 'YOUR_TELEGRAM_BOT_TOKEN';
 const bot = new TelegramBot(token, {polling: true});
 
 // Matches "/echo [whatever]"
-bot.onText(/\/echo (.+)/, (msg, match) => {
+bot.onText(/^\/echo(?:@.*?)? (.+)/, (msg, match) => {
   // 'msg' is the received Message from Telegram
   // 'match' is the result of executing the regexp above on the text content
   // of the message
