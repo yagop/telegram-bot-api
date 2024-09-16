@@ -971,6 +971,38 @@ class TelegramBot extends EventEmitter {
   }
 
   /**
+   * Sends long text message.
+   * currently, telegram bots can send only 4000 characters per message. to send a message longer than this length,
+   * you need to split it into multiple messages and then send them separately. this function does that.
+   * @param  {Number|String} chatId Unique identifier for the target chat or username of the target channel (in the format `@channelusername`)
+   * @param  {String} text Text of the message to be sent
+   * @param  {Object} [options] Additional Telegram query options
+   * @param  {retries} optional, specifies the maximum number of retries when trying to send the message;
+   * @return {boolean} On success, the last chunk's message object is returned
+   * @see https://core.telegram.org/bots/api#sendmessage
+   */
+  async sendLongMessage(chatId, text, form = {}, retries = 3) {
+    const MAX_MESSAGE_LENGTH = 4000;
+    let used_retries = 0;
+    let chunk_send_result;
+    let chunk_counts = Math.ceil(text.length/MAX_MESSAGE_LENGTH);
+    for (let chunk = 0; chunk < chunk_counts; chunk++) {
+      try{
+        let chunk_start = MAX_MESSAGE_LENGTH * chunk;
+        let chunk_end = Math.max(MAX_MESSAGE_LENGTH * (chunk + 1), text.length);
+        chunk_send_result = await this.sendMessage(chatId, text.slice(chunk_start, chunk_end));
+      }catch (error){
+        used_retries  += 1;
+        chunk -= 1;
+        if (used_retries > retries){
+          throw error;
+        }
+      }
+    }
+    return  chunk_send_result;
+  }
+
+  /**
    * Forward messages of any kind.
    * @param  {Number|String} chatId Unique identifier for the target chat or username of the target channel (in the format `@channelusername`)
    * or username of the target channel (in the format `@channelusername`)
