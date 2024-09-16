@@ -17,7 +17,7 @@
 that emits the following events:
 
 1. `message`: Received a new incoming [Message][message] of any kind
-  1. Depending on the properties of the [Message][message], one of these
+   1. Depending on the properties of the [Message][message], one of these
      events may **ALSO** be emitted: `text`, `audio`, `document`, `photo`,
      `sticker`, `video`, `voice`, `contact`, `location`,
      `new_chat_members`, `left_chat_member`, `new_chat_title`,
@@ -25,18 +25,20 @@ that emits the following events:
      `game`, `pinned_message`, `poll`, `dice`, `migrate_from_chat_id`, `migrate_to_chat_id`,
      `channel_chat_created`, `supergroup_chat_created`,
      `successful_payment`, `invoice`, `video_note`
-  1. **Arguments**: `message` ([Message][message]), `metadata` (`{ type?:string }`)
-  1. `new_chat_participant`, `left_chat_participant` are **deprecated**
+   1. **Arguments**: `message` ([Message][message]), `metadata` (`{ type?:string }`)
+   1. `new_chat_participant`, `left_chat_participant` are **deprecated**
 1. `callback_query`: Received a new incoming [Callback Query][callback-query]
 1. `inline_query`: Received a new incoming [Inline Query][inline-query]
 1. `chosen_inline_result`: Received result of an inline query i.e. [ChosenInlineResult][chosen-inline-result]
 1. `channel_post`: Received a new incoming channel post of any kind
-1. `edited_message`: Received a new version of a message that is known to the bot and was edited
-  1. `edited_message_text`
-  1. `edited_message_caption`
-1. `edited_channel_post`: Received a new version of a channel post that is known to the bot and was edited
-  1. `edited_channel_post_text`
-  1. `edited_channel_post_caption`
+1. `edited_message`: Received a new version of a message that is known to the bot and was edited \
+   Depending on the properties of the [Message][message], one of these events may **ALSO** be emitted:
+   1. `edited_message_text`
+   1. `edited_message_caption`
+1. `edited_channel_post`: Received a new version of a channel post that is known to the bot and was edited \
+   Depending on the properties of the [Message][message], one of these events may **ALSO** be emitted:
+   1. `edited_channel_post_text`
+   1. `edited_channel_post_caption`
 1. `shipping_query`: Received a new incoming shipping query
 1. `pre_checkout_query`: Received a new  incoming pre-checkout query
 1. `poll`: Received a new  incoming poll
