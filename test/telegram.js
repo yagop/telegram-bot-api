@@ -730,14 +730,14 @@ describe('TelegramBot', function telegramSuite() {
         assert.ok(is.object(resp.audio));
       });
     });
-    it('should send an audio file with thumb', function test() {
+    it('should send an audio file with thumbnail', function test() {
       const audio = `${__dirname}/data/audio.mp3`;
       const thumbImg = `attach://${__dirname}/data/sticker_thumb.png`;
 
-      return bot.sendAudio(USERID, audio, { thumb: thumbImg }).then(resp => {
+      return bot.sendAudio(USERID, audio, { thumbnail: thumbImg }).then(resp => {
         assert.ok(is.object(resp));
         assert.ok(is.object(resp.audio));
-        assert.ok(is.object(resp.audio.thumb));
+        assert.ok(is.object(resp.audio.thumbnail));
       });
     });
   });
@@ -1919,7 +1919,7 @@ describe('TelegramBot', function telegramSuite() {
       utils.handleRatelimit(bot, 'setStickerSetThumbnail', this);
     });
 
-    it('should set a sticker set thumb', function test() {
+    it('should set a sticker set thumbnail', function test() {
       const stickerThumb = `${__dirname}/data/sticker_thumb.png`;
       const stickerPackName = `s${CURRENT_TIMESTAMP}_by_${BOT_USERNAME}`;
 
