@@ -2280,6 +2280,21 @@ class TelegramBot extends EventEmitter {
   }
 
   /**
+ * Use this method to get the unique identifier of the prepared message and expiration date of the prepared message as an object.
+ *
+ * @param  {Number} userId  Unique identifier of the target user
+ * @param  {Object} result  The prepared inline message result to be saved
+ * @param  {Object} [form={}] Optional form data to include in the request
+ * @return {Promise} On success, returns a PreparedInlineMessage object
+ * @see https://core.telegram.org/bots/api#savepreparedinlinemessage
+ */
+  savePreparedInlineMessage(userId, result, form = {}) {
+    form.user_id = userId;
+    form.result = stringify(result);
+    return this._request('savePreparedInlineMessage', { form });
+  }
+
+  /**
    * Use this method to get the list of boosts added to a chat by a use.
    * Requires administrator rights in the chat
    *
