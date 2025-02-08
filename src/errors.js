@@ -30,7 +30,10 @@ exports.FatalError = class FatalError extends exports.BaseError {
     const error = (typeof data === 'string') ? null : data;
     const message = error ? error.message : data;
     super('EFATAL', message);
-    if (error) this.stack = error.stack;
+    if (error) {
+      this.stack = error.stack;
+      this.cause = error;
+    }
   }
 };
 
