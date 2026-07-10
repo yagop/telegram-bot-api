@@ -117,6 +117,8 @@ struct ClientParameters {
 
   td::int32 storage_max_time_from_last_access_ = -1;
 
+  td::vector<td::int64> allowed_bot_user_ids_;  // empty means that all bots are allowed
+
   td::int32 default_max_webhook_connections_ = 0;
   td::IPAddress webhook_proxy_ip_address_;
 

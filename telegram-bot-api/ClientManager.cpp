@@ -84,6 +84,11 @@ void ClientManager::send(PromisedQueryPtr query) {
   if (user_id <= 0 || user_id >= (static_cast<td::int64>(1) << 54)) {
     return fail_query(401, "Unauthorized: invalid token specified", std::move(query));
   }
+  const auto &allowed_bot_user_ids = parameters_->allowed_bot_user_ids_;
+  if (!allowed_bot_user_ids.empty() &&
+      std::find(allowed_bot_user_ids.begin(), allowed_bot_user_ids.end(), user_id) == allowed_bot_user_ids.end()) {
+    return fail_query(401, "Unauthorized: bot is not allowed to use the server", std::move(query));
+  }
 
   if (query->is_test_dc()) {
     token += "/test";

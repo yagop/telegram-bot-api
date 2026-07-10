@@ -249,6 +249,19 @@ int main(int argc, char *argv[]) {
       "maximum time in seconds since a file was last accessed before it can be deleted by the file garbage collector "
       "(defaults to the TDLib default of 23 hours)",
       td::OptionParser::parse_integer(parameters->storage_max_time_from_last_access_));
+  options.add_checked_option('\0', "allowed-bot-ids",
+                             "comma-separated list of bot user identifiers that are allowed to use the server. By "
+                             "default, all bots are allowed",
+                             [&](td::Slice ids) -> td::Status {
+                               for (auto id_str : td::full_split(ids, ',')) {
+                                 TRY_RESULT(user_id, td::to_integer_safe<td::int64>(id_str));
+                                 if (user_id <= 0) {
+                                   return td::Status::Error("Invalid bot user identifier specified");
+                                 }
+                                 parameters->allowed_bot_user_ids_.push_back(user_id);
+                               }
+                               return td::Status::OK();
+                             });
   options.add_checked_option('\0', "http-idle-timeout",
                              "maximum number of seconds to receive or send an HTTP query before the connection is "
                              "closed (default is 500)",
