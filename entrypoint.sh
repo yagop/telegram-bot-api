@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-TEMP_DIR=/var/lib/telegram-bot-api/temp
+TEMP_DIR=/tmp/telegram-bot-api
 
 # Remove in-flight upload directories left behind by a previous run if the
 # storage was reused: the server never reuses them, and nothing else cleans

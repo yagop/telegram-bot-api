@@ -34,4 +34,4 @@ ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["--verbosity=2", \
     "--storage-max-time-from-last-access=300", \
     "--http-idle-timeout=3600", \
-    "--temp-dir=/var/lib/telegram-bot-api/temp"]
+    "--temp-dir=/tmp/telegram-bot-api"]
