@@ -180,6 +180,7 @@ int main(int argc, char *argv[]) {
   td::string http_stat_ip_address = "0.0.0.0";
   td::string log_file_path;
   int default_verbosity_level = 0;
+  td::int32 http_idle_timeout = 500;
   int memory_verbosity_level = VERBOSITY_NAME(INFO);
   td::int64 log_max_file_size = 2000000000;
   td::string working_directory = PSTRING() << "." << TD_DIR_SLASH;
@@ -243,6 +244,15 @@ int main(int argc, char *argv[]) {
                                token_range = {rem_i, mod_i};
                                return td::Status::OK();
                              });
+  options.add_checked_option(
+      '\0', "storage-max-time-from-last-access",
+      "maximum time in seconds since a file was last accessed before it can be deleted by the file garbage collector "
+      "(defaults to the TDLib default of 23 hours)",
+      td::OptionParser::parse_integer(parameters->storage_max_time_from_last_access_));
+  options.add_checked_option('\0', "http-idle-timeout",
+                             "maximum number of seconds to receive or send an HTTP query before the connection is "
+                             "closed (default is 500)",
+                             td::OptionParser::parse_integer(http_idle_timeout));
   options.add_checked_option('\0', "max-webhook-connections",
                              "default value of the maximum webhook connections per bot",
                              td::OptionParser::parse_integer(parameters->default_max_webhook_connections_));
@@ -516,7 +526,8 @@ int main(int argc, char *argv[]) {
           [client_manager, shared_data] {
             return td::ActorOwn<td::HttpInboundConnection::Callback>(
                 td::create_actor<HttpConnection>("HttpConnection", client_manager, shared_data));
-          })
+          },
+          http_idle_timeout)
       .release();
 
   if (http_stat_port != 0) {

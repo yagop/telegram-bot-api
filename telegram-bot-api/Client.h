@@ -69,7 +69,7 @@ class Client final : public WebhookActor::Callback {
   static constexpr int32 GENERAL_FORUM_TOPIC_ID = 1;
 
   static constexpr int32 MAX_CERTIFICATE_FILE_SIZE = 3 << 20;
-  static constexpr int32 MAX_DOWNLOAD_FILE_SIZE = 20 << 20;
+  static constexpr int32 MAX_DOWNLOAD_FILE_SIZE = 2000 << 20;  // allow downloads up to Telegram's 2000 MB file limit
 
   static constexpr int32 MAX_CONCURRENTLY_SENT_CHAT_MESSAGES = 310;  // some unreasonably big value
 

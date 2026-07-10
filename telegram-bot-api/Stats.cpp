@@ -8,11 +8,39 @@
 
 #include "td/utils/common.h"
 #include "td/utils/logging.h"
+#include "td/utils/port/config.h"
 #include "td/utils/port/thread.h"
 #include "td/utils/SliceBuilder.h"
 #include "td/utils/StringBuilder.h"
 
+#if TD_PORT_POSIX
+#include <sys/resource.h>
+#endif
+
 namespace telegram_bot_api {
+
+static td::Result<td::CpuStat> get_cpu_stat(double now) {
+  auto r_cpu_stat = td::cpu_stat();
+  if (r_cpu_stat.is_ok() && r_cpu_stat.ok().total_ticks_ > 0) {
+    return r_cpu_stat;
+  }
+#if TD_PORT_POSIX
+  // fallback for sandboxed kernels (e.g. gVisor) where /proc/stat is unavailable or static:
+  // derive process ticks from getrusage and total ticks from the wall clock
+  struct rusage usage;
+  if (getrusage(RUSAGE_SELF, &usage) == 0) {
+    td::CpuStat stat;
+    stat.process_user_ticks_ =
+        static_cast<td::uint64>(usage.ru_utime.tv_sec) * 1000000 + static_cast<td::uint64>(usage.ru_utime.tv_usec);
+    stat.process_system_ticks_ =
+        static_cast<td::uint64>(usage.ru_stime.tv_sec) * 1000000 + static_cast<td::uint64>(usage.ru_stime.tv_usec);
+    auto cpu_count = td::thread::hardware_concurrency() ? td::thread::hardware_concurrency() : 1;
+    stat.total_ticks_ = static_cast<td::uint64>(now * 1e6) * cpu_count;
+    return stat;
+  }
+#endif
+  return r_cpu_stat;
+}
 
 ServerCpuStat::ServerCpuStat() {
   for (std::size_t i = 1; i < SIZE; i++) {
@@ -21,7 +49,7 @@ ServerCpuStat::ServerCpuStat() {
 }
 
 void ServerCpuStat::update(double now) {
-  auto r_cpu_stat = td::cpu_stat();
+  auto r_cpu_stat = get_cpu_stat(now);
   if (r_cpu_stat.is_error()) {
     if (r_cpu_stat.error().message() != "Not supported") {
       LOG(ERROR) << "Failed to get CPU statistics: " << r_cpu_stat.error();
@@ -34,7 +62,11 @@ void ServerCpuStat::update(double now) {
   for (auto &stat : cpu_stat.stat_) {
     stat.add_event(r_cpu_stat.ok(), now);
   }
-  LOG(WARNING) << "CPU usage: " << cpu_stat.stat_[1].get_stat(now).as_vector()[0].value_;
+  static double next_log_time = 0.0;
+  if (now >= next_log_time) {
+    next_log_time = now + 60.0;
+    LOG(WARNING) << "CPU usage: " << cpu_stat.stat_[1].get_stat(now).as_vector()[0].value_;
+  }
 }
 
 td::string ServerCpuStat::get_description() {

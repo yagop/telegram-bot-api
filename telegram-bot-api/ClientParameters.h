@@ -115,6 +115,8 @@ struct ClientParameters {
 
   td::string version_;
 
+  td::int32 storage_max_time_from_last_access_ = -1;
+
   td::int32 default_max_webhook_connections_ = 0;
   td::IPAddress webhook_proxy_ip_address_;
 

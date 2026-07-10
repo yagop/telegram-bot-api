@@ -30,6 +30,14 @@ void HttpConnection::handle(td::unique_ptr<td::HttpQuery> http_query,
     return send_http_error(404, "Not Found: absolute URI is specified in the Request-Line");
   }
 
+  if (http_query->url_path_ == "/stats") {
+    auto promise = td::PromiseCreator::lambda([actor_id = actor_id(this)](td::Result<td::BufferSlice> result) {
+      send_closure(actor_id, &HttpConnection::on_stats_result, std::move(result));
+    });
+    send_closure(client_manager_, &ClientManager::get_stats, std::move(promise), http_query->get_args(), true);
+    return;
+  }
+
   if (!url_path_parser.try_skip("/bot")) {
     return send_http_error(404, "Not Found");
   }
@@ -61,6 +69,13 @@ void HttpConnection::on_query_finished(td::Result<td::unique_ptr<Query>> r_query
 
   auto query = r_query.move_as_ok();
   send_response(query->http_status_code(), std::move(query->answer()), query->retry_after());
+}
+
+void HttpConnection::on_stats_result(td::Result<td::BufferSlice> result) {
+  if (result.is_error()) {
+    return send_http_error(500, "Internal Server Error");
+  }
+  send_response(200, result.move_as_ok(), 0);
 }
 
 void HttpConnection::send_response(int http_status_code, td::BufferSlice &&content, int retry_after) {

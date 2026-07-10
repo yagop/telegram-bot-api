@@ -24,6 +24,7 @@
 
 #include "td/utils/common.h"
 #include "td/utils/format.h"
+#include "td/utils/JsonBuilder.h"
 #include "td/utils/logging.h"
 #include "td/utils/misc.h"
 #include "td/utils/Parser.h"
@@ -190,10 +191,94 @@ ClientManager::TopClients ClientManager::get_top_clients(std::size_t max_count, 
   return result;
 }
 
+namespace {
+
+// StatItem values are '\t'-joined columns, one per stat duration window
+constexpr std::size_t STAT_DURATION_COUNT = 4;
+constexpr const char *STAT_DURATION_DESCR[STAT_DURATION_COUNT] = {"inf", "5sec", "1min", "1hour"};
+
+struct JsonStatItems final : public td::Jsonable {
+  explicit JsonStatItems(const td::vector<StatItem> *items) : items(items) {
+  }
+  const td::vector<StatItem> *items;
+
+  struct JsonDurations final : public td::Jsonable {
+    explicit JsonDurations(const td::vector<td::string> *values) : values(values) {
+    }
+    const td::vector<td::string> *values;
+    void store(td::JsonValueScope *scope) const {
+      auto object = scope->enter_object();
+      for (std::size_t i = 0; i < values->size() && i < STAT_DURATION_COUNT; i++) {
+        object(td::Slice(STAT_DURATION_DESCR[i]), (*values)[i]);
+      }
+    }
+  };
+
+  void store(td::JsonValueScope *scope) const {
+    auto object = scope->enter_object();
+    for (auto &item : *items) {
+      auto values = td::full_split(item.value_, '\t');
+      if (values.size() == STAT_DURATION_COUNT) {
+        object(item.key_, JsonDurations(&values));
+      } else {
+        object(item.key_, item.value_);
+      }
+    }
+  }
+};
+
+struct BotStatsData {
+  ServerBotInfo info;
+  td::int64 active_request_count = 0;
+  td::int64 active_file_upload_bytes = 0;
+  td::int64 active_file_upload_count = 0;
+  td::vector<StatItem> stats;
+};
+
+struct JsonBot final : public td::Jsonable {
+  JsonBot(const BotStatsData *bot, double now) : bot(bot), now(now) {
+  }
+  const BotStatsData *bot;
+  double now;
+  void store(td::JsonValueScope *scope) const {
+    auto object = scope->enter_object();
+    object("id", bot->info.id_);
+    object("uptime", now - bot->info.start_time_);
+    object("username", bot->info.username_);
+    object("active_request_count", bot->active_request_count);
+    object("active_file_upload_bytes", bot->active_file_upload_bytes);
+    object("active_file_upload_count", bot->active_file_upload_count);
+    // the webhook URL is intentionally not exposed: it may contain secrets (e.g. a token in the path)
+    object("has_webhook", td::JsonBool(!bot->info.webhook_.empty()));
+    if (!bot->info.webhook_.empty()) {
+      object("webhook_max_connections", bot->info.webhook_max_connections_);
+    }
+    object("head_update_id", bot->info.head_update_id_);
+    object("tail_update_id", bot->info.tail_update_id_);
+    object("pending_update_count", td::narrow_cast<td::int64>(bot->info.pending_update_count_));
+    object("stats", JsonStatItems(&bot->stats));
+  }
+};
+
+struct JsonBots final : public td::Jsonable {
+  JsonBots(const td::vector<BotStatsData> *bots, double now) : bots(bots), now(now) {
+  }
+  const td::vector<BotStatsData> *bots;
+  double now;
+  void store(td::JsonValueScope *scope) const {
+    auto array = scope->enter_array();
+    for (auto &bot : *bots) {
+      array << JsonBot(&bot, now);
+    }
+  }
+};
+
+}  // namespace
+
 void ClientManager::get_stats(td::Promise<td::BufferSlice> promise,
-                              td::vector<std::pair<td::string, td::string>> args) {
+                              td::vector<std::pair<td::string, td::string>> args, bool as_json) {
   if (close_flag_) {
-    promise.set_value(td::BufferSlice("Closing"));
+    promise.set_value(td::BufferSlice(as_json ? td::Slice("{\"error\":\"closing\"}") : td::Slice("Closing")));
     return;
   }
   size_t buf_size = 1 << 14;
@@ -227,6 +312,53 @@ void ClientManager::get_stats(td::Promise<td::BufferSlice> promise,
 
   auto now = td::Time::now();
   auto top_clients = get_top_clients(50, id_filter);
+
+  if (as_json) {
+    const size_t json_buf_size = 1 << 18;
+    auto json_buf = td::StackAllocator::alloc(json_buf_size);
+    td::JsonBuilder jb(td::StringBuilder(json_buf.as_slice(), true));
+    auto obj = jb.enter_object();
+    obj("uptime", now - parameters_->start_time_);
+    obj("bot_count", td::narrow_cast<td::int64>(clients_.size()));
+    obj("active_bot_count", top_clients.active_count);
+    auto r_mem_stat = td::mem_stat();
+    if (r_mem_stat.is_ok()) {
+      auto mem_stat = r_mem_stat.move_as_ok();
+      obj("rss", td::narrow_cast<td::int64>(mem_stat.resident_size_));
+      obj("vm", td::narrow_cast<td::int64>(mem_stat.virtual_size_));
+      obj("rss_peak", td::narrow_cast<td::int64>(mem_stat.resident_size_peak_));
+      obj("vm_peak", td::narrow_cast<td::int64>(mem_stat.virtual_size_peak_));
+    }
+    auto cpu_stats = ServerCpuStat::instance().as_vector(now);
+    obj("cpu", JsonStatItems(&cpu_stats));
+    obj("buffer_memory", td::narrow_cast<td::int64>(td::BufferAllocator::get_buffer_mem()));
+    obj("active_webhook_connections", td::narrow_cast<td::int64>(WebhookActor::get_total_connection_count()));
+    obj("active_requests",
+        td::narrow_cast<td::int64>(parameters_->shared_data_->query_count_.load(std::memory_order_relaxed)));
+    obj("active_network_queries",
+        td::narrow_cast<td::int64>(td::get_pending_network_query_count(*parameters_->net_query_stats_)));
+    auto server_stats = stat_.as_vector(now);
+    obj("stats", JsonStatItems(&server_stats));
+    td::vector<BotStatsData> bots_data;
+    for (auto top_client_id : top_clients.top_client_ids) {
+      auto *client_info = clients_.get(top_client_id);
+      CHECK(client_info);
+      BotStatsData bot_data;
+      bot_data.info = client_info->client_.get_actor_unsafe()->get_bot_info();
+      bot_data.active_request_count = client_info->stat_.get_active_request_count();
+      bot_data.active_file_upload_bytes = client_info->stat_.get_active_file_upload_bytes();
+      bot_data.active_file_upload_count = client_info->stat_.get_active_file_upload_count();
+      bot_data.stats = client_info->stat_.as_vector(now);
+      bots_data.push_back(std::move(bot_data));
+    }
+    obj("bots", JsonBots(&bots_data, now));
+    obj.leave();
+    if (jb.string_builder().is_error()) {
+      return promise.set_value(td::BufferSlice("{\"error\":\"stats are too big\"}"));
+    }
+    return promise.set_value(td::BufferSlice(jb.string_builder().as_cslice()));
+  }
+
   sb << BotStatActor::get_description() << '\n';
   if (id_filter.empty()) {
     sb << "uptime\t" << now - parameters_->start_time_ << '\n';

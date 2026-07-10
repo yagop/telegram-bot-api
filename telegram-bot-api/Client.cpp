@@ -9407,6 +9407,12 @@ void Client::on_update_authorization_state() {
         send_request(make_object<td_api::setOption>(option, make_object<td_api::optionValueBoolean>(true)),
                      td::make_unique<TdOnOkCallback>());
       }
+      if (parameters_->storage_max_time_from_last_access_ >= 0) {
+        send_request(make_object<td_api::setOption>(
+                         "storage_max_time_from_last_access",
+                         make_object<td_api::optionValueInteger>(parameters_->storage_max_time_from_last_access_)),
+                     td::make_unique<TdOnOkCallback>());
+      }
 
       auto request = make_object<td_api::setTdlibParameters>();
       request->use_test_dc_ = is_test_dc_;

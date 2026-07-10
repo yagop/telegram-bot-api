@@ -21,7 +21,7 @@ void HttpStatConnection::handle(td::unique_ptr<td::HttpQuery> http_query,
   auto promise = td::PromiseCreator::lambda([actor_id = actor_id(this)](td::Result<td::BufferSlice> result) {
     send_closure(actor_id, &HttpStatConnection::on_result, std::move(result));
   });
-  send_closure(client_manager_, &ClientManager::get_stats, std::move(promise), http_query->get_args());
+  send_closure(client_manager_, &ClientManager::get_stats, std::move(promise), http_query->get_args(), false);
 }
 
 void HttpStatConnection::on_result(td::Result<td::BufferSlice> result) {
