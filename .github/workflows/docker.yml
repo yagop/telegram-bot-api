@@ -2,7 +2,7 @@ name: Build image
 
 on:
   push:
-    branches: [scaleway-deploy]
+    branches: [deploy]
     tags: ['v*']
   workflow_dispatch:
 
