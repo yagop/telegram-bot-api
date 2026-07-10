@@ -1,0 +1,5 @@
+.git
+build
+Dockerfile
+.dockerignore
+telegram-bot-api-image.tar

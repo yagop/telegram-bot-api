@@ -3,3 +3,5 @@
 **/.DS_Store
 bin/
 vcpkg/
+.env
+deploy.sh
