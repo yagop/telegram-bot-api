@@ -5,3 +5,4 @@ bin/
 vcpkg/
 .env
 deploy.sh
+fly.toml
