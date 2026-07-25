@@ -36,6 +36,8 @@ jobs:
             type=sha
 
       - uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_RECORD_RETENTION_DAYS: 1
         with:
           context: .
           platforms: linux/amd64
