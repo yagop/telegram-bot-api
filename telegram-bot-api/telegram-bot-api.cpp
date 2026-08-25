@@ -243,6 +243,19 @@ int main(int argc, char *argv[]) {
                                token_range = {rem_i, mod_i};
                                return td::Status::OK();
                              });
+  options.add_checked_option('\0', "allowed-bot-ids",
+                             "comma-separated list of bot user identifiers that are allowed to use the server. By "
+                             "default, all bots are allowed",
+                             [&](td::Slice ids) -> td::Status {
+                               for (auto id_str : td::full_split(ids, ',')) {
+                                 TRY_RESULT(user_id, td::to_integer_safe<td::int64>(id_str));
+                                 if (user_id <= 0) {
+                                   return td::Status::Error("Invalid bot user identifier specified");
+                                 }
+                                 parameters->allowed_bot_user_ids_.push_back(user_id);
+                               }
+                               return td::Status::OK();
+                             });
   options.add_checked_option('\0', "max-webhook-connections",
                              "default value of the maximum webhook connections per bot",
                              td::OptionParser::parse_integer(parameters->default_max_webhook_connections_));
